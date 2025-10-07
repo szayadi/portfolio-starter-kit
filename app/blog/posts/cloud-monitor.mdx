@@ -1,0 +1,134 @@
+---
+title: 'Building a Real-Time Cloud Infrastructure Monitor'
+publishedAt: '2025-01-15'
+summary: 'A full-stack monitoring dashboard for tracking Azure cloud resources with real-time metrics, alerts, and cost analysis.'
+---
+
+## Overview
+
+During my internship at StockPikr, I recognized the need for better visibility into our Azure infrastructure. I built a comprehensive monitoring dashboard that tracks resource usage, performance metrics, and costs in real-time.
+
+## Technologies Used
+
+- **Frontend**: React 18, TypeScript, Recharts for data visualization
+- **Backend**: Node.js, Express.js, Azure SDK
+- **Database**: MongoDB for historical data
+- **Authentication**: Firebase Auth with role-based access control
+- **Deployment**: Microsoft Azure App Service
+
+## Key Features
+
+### Real-Time Metrics Dashboard
+
+The dashboard provides live updates on:
+- CPU and memory usage across all compute resources
+- Network traffic and bandwidth consumption
+- Database query performance
+- Storage utilization and costs
+
+```typescript
+// Example of real-time metric fetching
+interface AzureMetric {
+  resourceId: string;
+  metricName: string;
+  timestamp: Date;
+  value: number;
+}
+
+async function fetchResourceMetrics(subscriptionId: string): Promise<AzureMetric[]> {
+  const credential = new DefaultAzureCredential();
+  const monitorClient = new MonitorClient(credential, subscriptionId);
+  
+  const metrics = await monitorClient.metrics.list(
+    resourceUri,
+    {
+      timespan: 'PT1H',
+      interval: 'PT5M',
+      metricnames: 'Percentage CPU,Available Memory Bytes',
+      aggregation: 'Average'
+    }
+  );
+  
+  return processMetrics(metrics);
+}
+```
+
+### Cost Analysis & Optimization
+
+One of the most valuable features is the cost tracking system that:
+- Breaks down costs by resource group and service
+- Identifies underutilized resources
+- Provides optimization recommendations
+- Forecasts monthly spending based on current trends
+
+### Alert System
+
+Implemented a flexible alerting system that notifies teams when:
+- Resource usage exceeds defined thresholds
+- Unexpected cost spikes occur
+- Service health issues are detected
+- SSL certificates are approaching expiration
+
+## Technical Challenges Solved
+
+### Challenge 1: Data Volume
+
+With metrics collected every 5 minutes from dozens of resources, we needed efficient data storage and querying.
+
+**Solution**: Implemented a time-series data model in MongoDB with automatic aggregation and retention policies. Raw data is kept for 7 days, hourly aggregates for 30 days, and daily aggregates indefinitely.
+
+### Challenge 2: Real-Time Updates
+
+Users expect instant updates without constant page refreshing.
+
+**Solution**: Implemented WebSocket connections using Socket.io for push notifications and used React Query for efficient data caching and background refetching.
+
+```typescript
+// WebSocket implementation for real-time updates
+const socket = io(process.env.NEXT_PUBLIC_WS_URL);
+
+useEffect(() => {
+  socket.on('metric-update', (data: AzureMetric) => {
+    queryClient.setQueryData(['metrics', data.resourceId], (old) => {
+      return updateMetricData(old, data);
+    });
+  });
+
+  return () => socket.off('metric-update');
+}, []);
+```
+
+### Challenge 3: Performance
+
+Rendering thousands of data points caused UI lag.
+
+**Solution**: Implemented data downsampling for visualizations and virtualization for large tables using react-window.
+
+## Results & Impact
+
+- **25% reduction** in monthly Azure costs through identification of idle resources
+- **Improved response time** to incidents from ~30 minutes to <5 minutes
+- **Enhanced visibility** enabling proactive capacity planning
+- Successfully **prevented 3 potential outages** by catching issues early
+
+## Key Learnings
+
+1. **Cloud Cost Management is Critical**: Small optimizations compound into significant savings
+2. **User Experience Matters**: Real-time updates and intuitive UI drive adoption
+3. **Monitoring is Infrastructure**: Treat monitoring code with the same rigor as production code
+4. **Documentation Drives Success**: Comprehensive docs helped the entire team leverage the tool
+
+## Future Enhancements
+
+- Multi-cloud support (AWS, GCP)
+- Machine learning for anomaly detection
+- Automated remediation workflows
+- Mobile app for on-call engineers
+
+## GitHub Repository
+
+[View the complete source code on GitHub](https://github.com/sammyzayadi/cloud-monitor)
+
+---
+
+This project demonstrates my ability to identify business needs, architect scalable solutions, and deliver measurable value. It combines full-stack development skills with cloud expertise and a deep understanding of DevOps practices.
